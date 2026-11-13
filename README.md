@@ -101,6 +101,18 @@ For your own site, create the accounts with the tool you already use and give
 their passwords through environment variables (`SITE_ADMIN_PASSWORD`,
 `SITE_EDITOR_PASSWORD`, `SITE_MEMBER_PASSWORD`); never commit a real password.
 
+## Running the suite again and again
+
+The site counts failed log ins and password reset requests and refuses the next
+one after five for one account in six hours, or fifty from one address in an
+hour. The reference features log in with a wrong password and ask for a
+password reset on every run, so a site that is tested often reaches that count.
+The site build script lifts the two limits (`flood_user_limit` and
+`flood_ip_limit` of the `user.flood` configuration); do the same on your own
+test site, never on a live one. When the limit is reached all the same,
+`When I ask for a password reset for "..."` fails with the answer of the site
+and this advice.
+
 ## Steps
 
 One phrasing per step is listed here; every step has at least five in the JSDoc

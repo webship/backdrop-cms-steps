@@ -60,6 +60,13 @@ Feature: Logging in and out
     Then the status message should contain "Further instructions have been sent to your email address."
     And there should be no error messages
 
+  Scenario: A password reset for an unknown account is refused
+    Given I am an anonymous user
+    When I ask for a password reset for "nobody-here"
+    Then the error message should be "Sorry, nobody-here is not recognized as a user name or an email address."
+    And there should be no status messages
+    And the "Username or email address" field should be marked as an error
+
   Scenario: A signed-in user opens the account page
     Given I am logged in as "member"
     When I open my account page

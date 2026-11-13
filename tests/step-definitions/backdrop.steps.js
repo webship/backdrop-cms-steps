@@ -187,7 +187,10 @@ Then(/^(I |we )*should( not)* have a session cookie$/, async function (pronounCa
 /**
  * Ask for a password reset through the "Reset password" form (`/user/password`)
  * for a username or an email address. The site answers with a status message
- * and sends an email; the account is not changed.
+ * and sends an email; the account is not changed. An unknown name is answered
+ * with an error message, which the scenario asserts. The step fails when the
+ * site refuses the request because of its flood limit (too many requests for
+ * one account or from one address), and says how to lift it on a test site.
  *
  * Example #1: When I ask for a password reset for "editor"
  * Example #2: When I ask for a password reset for "member@example.com"
@@ -204,6 +207,16 @@ When(/^(I |we )*ask for a password reset for "([^"]*)"$/, async function (pronou
   await form.locator('input[name="name"]').fill(account);
   await form.locator('input[type="submit"]').first().click();
   await settle(this);
+  // The site counts the requests: five for one account in six hours, fifty from
+  // one address in an hour. A suite that runs often on one site reaches that
+  // count, and the refusal says nothing about the form under test.
+  const refused = (await messageTexts(this, 'error')).find((text) => /too many password reset attempts/i.test(text));
+  if (refused) {
+    throw friendly({
+      message: `The site refused the password reset for "${account}": "${refused}"`,
+      hint: 'This is the flood limit of the site, not a fault of the form: it allows five requests for one account in six hours and fifty from one address in an hour. On a test site raise "flood_user_limit" and "flood_ip_limit" of the "user.flood" configuration (the site build script of this pack does), or wait for the window to pass.',
+    });
+  }
 });
 
 // ---------------------------------------------------------------------------
