@@ -1,0 +1,14 @@
+node_modules/
+tests/reports/*.json
+tests/reports/*.html
+tests/reports/*.pdf
+screenshots/
+videos/
+*.log
+.DS_Store
+.claude/
+.ref/
+.tmp/
+
+# Local DDEV build of the site the suite runs against (CI builds the same in a temporary folder).
+site/
