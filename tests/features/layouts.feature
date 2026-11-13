@@ -150,6 +150,8 @@ Feature: Layouts and blocks
     # The block joined the layout when its condition was added: the dialog now updates it.
     When I press "Update block" in the dialog
     Then the "Sidebar" region should have the "Syndicate" block
+    And the "Syndicate" block of the "Sidebar" region should have a condition containing "User has the role Editor"
+    And the "Syndicate" block of the "Sidebar" region should not have a condition containing "Administrator"
     When I save the layout changes
     And I log in as "editor"
     And I go to "/visit-the-apiary"

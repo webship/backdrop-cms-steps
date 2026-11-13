@@ -74,3 +74,38 @@ Feature: The administration bar
     When I log out from the administration bar
     Then I should be logged out
     And I should not see the administration bar
+
+  # The bar measures the window. When its items do not fit, the search, the
+  # account link and "Log out" fold behind "More tasks"; on a narrower window
+  # the menu folds behind "Menu". The steps open the folded part themselves.
+  Scenario: The menu search is reached when the bar folds it behind "More tasks"
+    Given I am logged in as "admin"
+    When I set the viewport size to 1100x800
+    Then the administration bar should fold its tasks
+    But the administration bar should not fold its menu
+    When I search the administration bar for "Layouts"
+    Then the administration bar search should suggest "Structure: Layouts"
+    When I choose "Structure: Layouts" from the administration bar search
+    Then the page heading should be "Layouts"
+
+  Scenario: A page opens from the menu when the bar folds it behind "Menu"
+    Given I am logged in as "admin"
+    When I set the viewport size to 700x900
+    Then the administration bar should fold its menu
+    And the administration bar should fold its tasks
+    When I open "Structure > Taxonomy" from the administration bar
+    Then the page heading should be "Taxonomy"
+
+  Scenario: Logging out is reached when the bar folds it behind "More tasks"
+    Given I am logged in as "editor"
+    When I set the viewport size to 700x900
+    Then the administration bar should fold its tasks
+    And the administration bar should show the account "editor"
+    When I log out from the administration bar
+    Then I should be logged out
+
+  Scenario: On a wide window the bar shows everything in full
+    Given I am logged in as "admin"
+    When I set the viewport size to 1920x1080
+    Then the administration bar should not fold its tasks
+    And the administration bar should not fold its menu

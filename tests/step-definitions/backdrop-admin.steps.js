@@ -60,6 +60,27 @@ async function adminBar(world) {
 }
 
 /**
+ * Unfold a part of the administration bar that is folded. The bar measures
+ * itself: when its items do not fit the width of the window, the list of the
+ * search, the account link and "Log out" (`#admin-bar-extra`) folds behind
+ * "More tasks", and on a narrower window the administration menu
+ * (`#admin-bar-menu`) folds behind "Menu". A folded list carries the class
+ * `dropdown` instead of `top-level` and opens while its item is hovered.
+ *
+ * @param {object} world
+ * @param {string} id - `admin-bar-menu` or `admin-bar-extra`.
+ */
+async function unfoldBar(world, id) {
+  const list = world.page.locator(`${BAR} #${id}`).first();
+  const folded = await list.evaluate((el) => el.classList.contains('dropdown')).catch(() => false);
+  if (!folded) return;
+  const inner = list.locator(':scope > li > ul.dropdown').first();
+  if (await inner.isVisible().catch(() => false)) return;
+  await list.locator(':scope > li > span, :scope > li > a').first().hover();
+  await inner.waitFor({ state: 'visible', timeout: budget(world) }).catch(() => {});
+}
+
+/**
  * The link of a list of the administration bar with a text.
  *
  * @param {import('playwright').Locator} list - A `ul` of the bar.
@@ -126,6 +147,7 @@ Then(/^the administration bar should( not)* list "([^"]*)"$/, async function (no
 When(/^(I |we )*open "([^"]*)" from the administration bar$/, async function (pronounCase, path) {
   const bar = await adminBar(this);
   const parts = path.split('>').map((part) => part.trim()).filter(Boolean);
+  await unfoldBar(this, 'admin-bar-menu');
   let list = bar.locator('#admin-bar-menu > li > ul.dropdown').first();
   for (let index = 0; index < parts.length; index++) {
     const link = barLink(list, parts[index]);
@@ -142,13 +164,41 @@ When(/^(I |we )*open "([^"]*)" from the administration bar$/, async function (pr
         await link.click();
       }, 'The item opens when its parent is hovered; check the path of items.');
     } else {
-      await link.hover();
+      await actOrExplain('hover the administration bar item', parts.slice(0, index + 1).join(' > '), () => link.hover({ timeout: budget(this) }),
+        'The item must be visible to open its menu; on a narrow window the menu of the bar folds behind "Menu", which the step opens first.');
       list = link.locator('xpath=..').locator(':scope > ul.dropdown').first();
       await actOrExplain('open the administration bar menu', parts.slice(0, index + 1).join(' > '), () => list.waitFor({ state: 'visible', timeout: budget(this) }),
         'The menu of an item opens when the item is hovered; the item may have no menu of its own.');
     }
   }
   await settle(this);
+});
+
+/**
+ * Assert the administration bar folds (or does not fold) a part of itself. The
+ * bar measures the window: when its items do not fit, the search, the account
+ * link and "Log out" fold behind "More tasks"; on a narrower window the
+ * administration menu folds behind "Menu". The steps of the bar open a folded
+ * part themselves; this step states which case a scenario covers.
+ *
+ * Example #1: Then the administration bar should fold its tasks
+ * Example #2: Then the administration bar should not fold its tasks
+ * Example #3: And the administration bar should fold its menu
+ * Example #4: Then the administration bar should not fold its menu
+ * Example #5: And the administration bar should fold the tasks
+ *
+ */
+Then(/^the administration bar should( not)* fold (?:its|the) (menu|tasks)$/, async function (notCase, part) {
+  const bar = await adminBar(this);
+  const list = bar.locator(part === 'menu' ? '#admin-bar-menu' : '#admin-bar-extra').first();
+  const result = await poll(this, () => list.evaluate((el) => el.classList.contains('dropdown')), (folded) => (notCase ? !folded : folded));
+  if (!result.ok) {
+    const width = await this.page.evaluate(() => window.innerWidth);
+    throw friendly({
+      message: notCase ? `Expected the administration bar not to fold its ${part}, but it does at a window ${width} pixels wide.` : `Expected the administration bar to fold its ${part}, but it shows ${part === 'menu' ? 'the menu' : 'them'} in full at a window ${width} pixels wide.`,
+      hint: `The bar folds by the room it has, which depends on the sections and the username of the account: ${part === 'menu' ? 'the menu folds behind "Menu"' : 'the search, the account link and "Log out" fold behind "More tasks"'}. Set the width first ("When I set the viewport size to 1000x800").`,
+    });
+  }
 });
 
 /**
@@ -165,8 +215,9 @@ When(/^(I |we )*open "([^"]*)" from the administration bar$/, async function (pr
 When(/^(I |we )*search the administration bar for "([^"]*)"$/, async function (pronounCase, text) {
   const bar = await adminBar(this);
   const input = bar.locator('#admin-bar-search-items, .admin-bar-search input[type="search"]').first();
+  await unfoldBar(this, 'admin-bar-extra');
   await actOrExplain('find', 'the menu search of the administration bar', () => input.waitFor({ state: 'visible', timeout: budget(this) }),
-    'The search is the "Menu search" field of the bar; on a narrow screen it folds behind "More tasks".');
+    'The search is the "Menu search" field of the bar ("Admin search" for a screen reader); the step opens "More tasks" when the bar folds it away.');
   await input.click();
   await input.fill('');
   // The search listens to the keys as they are typed.
@@ -208,6 +259,7 @@ Then(/^the administration bar search should( not)* suggest "([^"]*)"$/, async fu
 When(/^(I |we )*choose "([^"]*)" from the administration bar search$/, async function (pronounCase, name) {
   const link = this.page.locator(`${BAR} .admin-bar-search-results a`).filter({ hasText: exactly(name) }).first();
   await actOrExplain('choose the administration bar search suggestion', name, async () => {
+    if ((await link.count()) && !(await link.isVisible())) await unfoldBar(this, 'admin-bar-extra');
     await link.waitFor({ state: 'visible', timeout: budget(this) });
     await link.click();
   }, 'Search first ("When I search the administration bar for ..."); use the suggestion as it reads ("Structure: Layouts").');
@@ -280,10 +332,11 @@ When(/^(I |we )*flush (?:all caches|every cache) from the administration bar$/, 
 When(/^(I |we )*(?:log|sign) out from the administration bar$/, async function (pronounCase) {
   const bar = await adminBar(this);
   const link = bar.locator('.admin-bar-logout a').first();
+  await unfoldBar(this, 'admin-bar-extra');
   await actOrExplain('click', 'Log out', async () => {
     await link.waitFor({ state: 'visible', timeout: budget(this) });
     await link.click();
-  }, 'The "Log out" link sits at the end of the bar; on a narrow screen it folds behind "More tasks".');
+  }, 'The "Log out" link sits at the end of the bar; the step opens "More tasks" when the bar folds it away.');
   await settle(this);
   this.siteUser = null;
 });

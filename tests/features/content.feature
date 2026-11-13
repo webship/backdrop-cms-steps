@@ -100,6 +100,30 @@ Feature: Creating, editing, publishing and deleting content
     When I delete the content "Scheduled note"
     Then the content "Scheduled note" should not exist
 
+  # "Promote" and "Make sticky at top of lists" share one accessible name on the
+  # form ("Additional actions"), so they are set with a step of their own.
+  Scenario: A post that is not promoted stays off the home page until it is promoted
+    Given I am logged in as "editor"
+    And the content "Quiet note from the suite" does not exist
+    When I start a new "Post"
+    And I enter "Quiet note from the suite" in the "Title" field
+    Then the "Publishing actions" vertical tab summary should contain "Promote"
+    When I set the content to be not promoted
+    Then the "Publishing actions" vertical tab summary should not contain "Promote"
+    When I save the content form
+    And I am on the homepage
+    Then I should not see the teaser "Quiet note from the suite"
+    When I edit the content "Quiet note from the suite"
+    And I set the content to be promoted
+    And I set the content to be sticky
+    Then the "Publishing options" vertical tab summary should contain "Promoted"
+    And the "Publishing options" vertical tab summary should contain "Sticky"
+    When I save the content form
+    And I am on the homepage
+    Then I should see the teaser "Quiet note from the suite"
+    When I delete the content "Quiet note from the suite"
+    Then the content "Quiet note from the suite" should not exist
+
   Scenario: The content form is refused without a title
     Given I am logged in as "editor"
     When I start a new "Page"

@@ -566,6 +566,31 @@ Then(/^the "([^"]*)" region should have (\d+) blocks?$/, async function (regionN
 });
 
 /**
+ * Assert a block of a region of the layout shows (or does not show) a
+ * visibility condition in the editor: the "Conditions" list under the block
+ * ("User has the role Editor"). The condition only needs to contain the text.
+ *
+ * Example #1: Then the "Syndicate" block of the "Sidebar" region should have a condition containing "Editor"
+ * Example #2: Then the "Syndicate" block of the "Sidebar" region should not have a condition containing "Administrator"
+ * Example #3: And the "Search form" block of the "Header" region should not have a condition containing "role"
+ * Example #4: Then the "Syndicate" block of the "Footer" region should have a condition containing "User has the role Editor"
+ * Example #5: And the "Primary navigation" block of the "Header" region should not have a condition containing "Home page"
+ *
+ */
+Then(/^the "([^"]*)" block of the "([^"]*)" region should( not)* have a condition containing "([^"]*)"$/, async function (title, regionName, notCase, text) {
+  const item = await block(this, title, regionName);
+  const read = async () => (await item.locator('ul.block-conditions li').allTextContents()).map(clean);
+  const result = await poll(this, read, (conditions) => (notCase ? !conditions.some((value) => value.includes(text)) : conditions.some((value) => value.includes(text))));
+  if (!result.ok) {
+    throw friendly({
+      message: notCase ? `Expected the "${title}" block of the "${regionName}" region to have no condition containing "${text}", but it has: ${result.value.join(' | ')}.`
+        : `Expected the "${title}" block of the "${regionName}" region to have a condition containing "${text}", but its conditions are: ${result.value.join(' | ') || '(none)'}.`,
+      hint: 'The editor lists the visibility conditions of a block under it ("Conditions"); they are set in the configuration dialog of the block ("Visibility conditions").',
+    });
+  }
+});
+
+/**
  * Assert the order of two blocks of a region of the layout in the editor.
  *
  * Example #1: Then the "Header block" block should come before the "Primary navigation" block in the "Header" region

@@ -117,7 +117,17 @@ function siteUrl(world, url) {
  * @param {string} url - A path of the site or an absolute URL.
  */
 async function open(world, url) {
-  await gotoUrl(world.page, siteUrl(world, url));
+  const target = siteUrl(world, url);
+  try {
+    await gotoUrl(world.page, target);
+  } catch (err) {
+    // The browser drops a navigation when a network interface of the machine
+    // comes or goes while the page loads (ERR_NETWORK_CHANGED), as happens on a
+    // machine that starts or stops containers. A person reloads; so does the
+    // step, once. Any other failure is reported as it is.
+    if (!/ERR_NETWORK_CHANGED/.test(String(err && err.message))) throw err;
+    await gotoUrl(world.page, target);
+  }
   await world.page.waitForSelector('body', { state: 'attached', timeout: budget(world) });
   await waitForPageLoad(world.page, settleTime(world));
 }
