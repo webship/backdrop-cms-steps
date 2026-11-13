@@ -72,3 +72,22 @@ Feature: Logging in and out
     When I open my account page
     Then the page heading should be "member"
     And I should see the "Edit" page tab
+
+  Scenario: The account menu of the header follows the session
+    Given I am an anonymous user
+    And I am on the homepage
+    Then the account menu should list "Login"
+    And the account menu should not list "Log out"
+    When I click "Login" in the account menu
+    Then the page heading should be "Log in"
+    Given I am logged in as "member"
+    And I am on the homepage
+    Then the account menu should list "My account"
+    And the account menu should list "Log out"
+    And the account menu should not list "Login"
+    When I click "My account" in the account menu
+    Then the page heading should be "member"
+    When I am on the homepage
+    And I click "Log out" in the account menu
+    Then I should be logged out
+    And the account menu should list "Login"

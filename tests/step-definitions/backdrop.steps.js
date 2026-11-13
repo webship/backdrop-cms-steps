@@ -311,10 +311,10 @@ Then(/^the "([^"]*)" field should( not)* be marked as an error$/, async function
   const item = await formItem(this, label);
   const marked = await item.locator('input.error, select.error, textarea.error').count();
   if (notCase ? marked > 0 : marked === 0) {
-    const flagged = await this.page.locator('.form-item:has(> input.error, > select.error, > .form-textarea-wrapper > textarea.error) > label').allInnerTexts().catch(() => []);
+    const flagged = await this.page.locator('.form-item:has(> input.error, > select.error, > .form-textarea-wrapper > textarea.error) > label').allTextContents().catch(() => []);
     throw friendly({
       message: notCase ? `Expected the "${label}" field not to be marked as an error, but it is.` : `Expected the "${label}" field to be marked as an error, but it is not. Fields marked: ${flagged.map(clean).join(', ') || '(none)'}.`,
-      hint: 'A field is marked after the form is submitted and the server refuses its value; the browser stops an empty required field before that ("Given browser validation for the form ... is disabled").',
+      hint: 'A field is marked on the page that follows a refused submission. The forms carry no browser validation: an empty required field is refused by the site, with an error message.',
     });
   }
 });
@@ -356,7 +356,7 @@ Then(/^the primary navigation should( not)* (?:list|contain) "([^"]*)"$/, async 
   const link = this.page.locator(`${PRIMARY} ul.menu a`).filter({ hasText: exactly(name) });
   const result = await poll(this, () => link.count(), (count) => (notCase ? count === 0 : count > 0));
   if (!result.ok) {
-    const links = await this.page.locator(`${PRIMARY} ul.menu a`).allInnerTexts().catch(() => []);
+    const links = await this.page.locator(`${PRIMARY} ul.menu a`).allTextContents().catch(() => []);
     throw friendly({
       message: notCase ? `Expected the primary navigation not to list "${name}", but it does.` : `Expected the primary navigation to list "${name}", but it lists: ${links.map(clean).join(', ') || '(no links; is the block on this page?)'}.`,
       hint: PRIMARY_HINT,
@@ -396,7 +396,7 @@ When(/^(I |we )*click "([^"]*)" in the primary navigation$/, async function (pro
  */
 Then(/^the primary navigation should( not)* mark "([^"]*)" as the current page$/, async function (notCase, name) {
   const current = this.page.locator(`${PRIMARY} ul.menu a[aria-current="page"]`);
-  const result = await poll(this, async () => (await current.allInnerTexts()).map(clean), (texts) => (notCase ? !texts.includes(name) : texts.includes(name)));
+  const result = await poll(this, async () => (await current.allTextContents()).map(clean), (texts) => (notCase ? !texts.includes(name) : texts.includes(name)));
   if (!result.ok) {
     throw friendly({
       message: notCase ? `Expected the primary navigation not to mark "${name}" as the current page, but it does.` : `Expected the primary navigation to mark "${name}" as the current page, but it marks: ${result.value.join(', ') || '(no link)'}.`,
@@ -443,6 +443,64 @@ Then(/^the primary navigation(?: links)? should( not)* be open$/, async function
 });
 
 // ---------------------------------------------------------------------------
+// Account menu
+// ---------------------------------------------------------------------------
+
+// The header block of the front end prints the account links next to the site
+// name: `nav.header-menu ul.links`. A visitor sees "Login"; a signed-in account
+// sees "My account" and "Log out". The administration theme has no such menu.
+const ACCOUNT_MENU = '.block-system-header nav.header-menu';
+const ACCOUNT_MENU_HINT = 'The account menu is the list of links of the header block (`nav.header-menu`) on the front end: "Login" for a visitor, "My account" and "Log out" for a signed-in account. Administration pages have no header block.';
+
+/**
+ * Assert the account menu of the header lists (or does not list) a link, by
+ * its text: "Login" for a visitor, "My account" and "Log out" for a signed-in
+ * account.
+ *
+ * Example #1: Then the account menu should list "Log out"
+ * Example #2: Then the account menu should list "My account"
+ * Example #3: And the account menu should not list "Login"
+ * Example #4: Then the account menu should contain "Login"
+ * Example #5: And the account menu should not contain "Log out"
+ *
+ */
+Then(/^the account menu should( not)* (?:list|contain) "([^"]*)"$/, async function (notCase, name) {
+  const links = this.page.locator(`${ACCOUNT_MENU} a`);
+  const result = await poll(this, async () => (await links.allTextContents()).map(clean), (texts) => (notCase ? !texts.includes(clean(name)) : texts.includes(clean(name))));
+  if (!result.ok) {
+    throw friendly({
+      message: notCase ? `Expected the account menu not to list "${name}", but it does.` : `Expected the account menu to list "${name}", but it lists: ${result.value.join(', ') || '(no links; is the header block on this page?)'}.`,
+      hint: ACCOUNT_MENU_HINT,
+    });
+  }
+});
+
+/**
+ * Click a link of the account menu of the header, by its text.
+ *
+ * Example #1: When I click "My account" in the account menu
+ * Example #2: When I click "Log out" in the account menu
+ * Example #3: When we click "Login" in the account menu
+ * Example #4: And I click "Log out" in the account menu
+ * Example #5: When click "My account" in the account menu
+ *
+ */
+When(/^(I |we )*click "([^"]*)" in the account menu$/, async function (pronounCase, name) {
+  const link = this.page.locator(`${ACCOUNT_MENU} a`).filter({ hasText: exactly(name) }).first();
+  const result = await poll(this, () => link.count(), (count) => count > 0);
+  if (!result.ok) {
+    const offered = (await this.page.locator(`${ACCOUNT_MENU} a`).allTextContents()).map(clean);
+    throw friendly({
+      message: `The account menu has no "${name}" link. It lists: ${offered.join(', ') || '(no links; is the header block on this page?)'}.`,
+      hint: ACCOUNT_MENU_HINT,
+    });
+  }
+  await link.click();
+  await settle(this);
+  if (/^log out$/i.test(clean(name))) this.siteUser = null;
+});
+
+// ---------------------------------------------------------------------------
 // Breadcrumb, heading, tabs, action links
 // ---------------------------------------------------------------------------
 
@@ -460,7 +518,7 @@ Then(/^the primary navigation(?: links)? should( not)* be open$/, async function
 Then(/^the breadcrumb trail should( not)* be "([^"]*)"$/, async function (notCase, expectedPath) {
   const expected = expectedPath.split('>').map((part) => part.trim()).join(' > ');
   const items = this.page.locator('nav.breadcrumb li');
-  const result = await poll(this, async () => (await items.allInnerTexts()).map(clean).filter(Boolean).join(' > '), (trail) => (notCase ? trail !== expected : trail === expected));
+  const result = await poll(this, async () => (await items.allTextContents()).map(clean).filter(Boolean).join(' > '), (trail) => (notCase ? trail !== expected : trail === expected));
   if (!result.ok) {
     throw friendly({
       message: notCase ? `Expected the breadcrumb trail not to be "${expected}", but it is.` : `Expected the breadcrumb trail "${expected}", but the page shows "${result.value || '(no breadcrumb)'}".`,
@@ -482,7 +540,7 @@ Then(/^the breadcrumb trail should( not)* be "([^"]*)"$/, async function (notCas
  */
 Then(/^the page heading should( not)* be "([^"]*)"$/, async function (notCase, text) {
   const headings = this.page.locator('h1.page-title, h1.user-simplified-page-title, h1');
-  const result = await poll(this, async () => (await headings.allInnerTexts()).map(clean).filter(Boolean), (texts) => (notCase ? !texts.includes(clean(text)) : texts.includes(clean(text))));
+  const result = await poll(this, async () => (await headings.allTextContents()).map(clean).filter(Boolean), (texts) => (notCase ? !texts.includes(clean(text)) : texts.includes(clean(text))));
   if (!result.ok) {
     throw friendly({
       message: notCase ? `Expected the page heading not to be "${text}", but it is.` : `Expected the page heading "${text}", but the page shows "${result.value.join('" / "') || '(no heading)'}" at ${this.page.url()}.`,
@@ -534,6 +592,40 @@ When(/^(I |we )*open the "([^"]*)" page tab$/, async function (pronounCase, name
 });
 
 /**
+ * Assert a page tab is (or is not) the active one: the tab of the page in the
+ * browser, which the site marks with `aria-current="page"` and a hidden
+ * "(active tab)".
+ *
+ * Example #1: Then the "View" page tab should be active
+ * Example #2: Then the "Edit" page tab should be active
+ * Example #3: And the "Edit" page tab should not be active
+ * Example #4: Then the "Manage content" page tab should be active
+ * Example #5: And the "Manage files" page tab should not be active
+ *
+ */
+Then(/^the "([^"]*)" page tab should( not)* be active$/, async function (name, notCase) {
+  const read = () => this.page.locator('ul.tabs a').evaluateAll((els) => els.map((el) => ({
+    name: (el.textContent || '').replace(/\(active tab\)/, '').replace(/\s+/g, ' ').trim(),
+    active: el.getAttribute('aria-current') === 'page' || el.classList.contains('active') || (el.parentElement && el.parentElement.classList.contains('active')),
+  })));
+  const wanted = clean(name).toLowerCase();
+  const result = await poll(this, read, (tabs) => {
+    const tab = tabs.find((item) => item.name.toLowerCase() === wanted);
+    return Boolean(tab) && (notCase ? !tab.active : tab.active);
+  });
+  if (!result.ok) {
+    const tabs = result.value || [];
+    const tab = tabs.find((item) => item.name.toLowerCase() === wanted);
+    throw friendly({
+      message: !tab ? `The page has no "${name}" page tab. It offers: ${tabs.map((item) => item.name).join(', ') || '(no tabs)'}.`
+        : notCase ? `Expected the "${name}" page tab not to be active, but it is.`
+          : `Expected the "${name}" page tab to be active, but the active tab is: ${tabs.filter((item) => item.active).map((item) => item.name).join(', ') || '(none)'}.`,
+      hint: 'Page tabs are the local tasks of the page (`ul.tabs`); a page with primary and secondary tabs has one active tab in each row.',
+    });
+  }
+});
+
+/**
  * Follow an action link of the page: the links above a listing, such as
  * "Add content", "Add term" or "Add link".
  *
@@ -548,7 +640,7 @@ When(/^(I |we )*follow the "([^"]*)" action link$/, async function (pronounCase,
   const link = this.page.locator('ul.action-links a').filter({ hasText: exactly(name) }).first();
   const result = await poll(this, () => link.count(), (count) => count > 0);
   if (!result.ok) {
-    const links = await this.page.locator('ul.action-links a').allInnerTexts().catch(() => []);
+    const links = await this.page.locator('ul.action-links a').allTextContents().catch(() => []);
     throw friendly({
       message: `The page has no "${name}" action link. It has: ${links.map(clean).join(', ') || '(none)'}.`,
       hint: 'Action links sit above a listing (`ul.action-links`); they depend on the permissions of the account.',
@@ -596,7 +688,7 @@ When(/^(I |we )*go to (?:the (next|previous|first|last) page|page (\d+)) of the 
     ? pager.locator(`li.pager-${named} a`).first()
     : pager.locator('li.pager-item a').filter({ hasText: exactly(number) }).first();
   if (!(await link.count())) {
-    const offered = (await pager.locator('li').allInnerTexts()).map(clean);
+    const offered = (await pager.locator('li').allTextContents()).map(clean);
     throw friendly({
       message: `The pager has no ${supplied(named) ? '"' + named + '"' : 'page ' + number} link. It shows: ${offered.join(' ')}.`,
       hint: 'The first page has no "previous" and "first" links, the last page no "next" and "last" links; the current page is not a link.',
@@ -618,7 +710,7 @@ When(/^(I |we )*go to (?:the (next|previous|first|last) page|page (\d+)) of the 
  */
 Then(/^the pager should( not)* be on page (\d+)$/, async function (notCase, number) {
   const current = this.page.locator('ul.pager li.pager-current').first();
-  const result = await poll(this, async () => ((await current.count()) ? clean(await current.innerText()) : null), (value) => (notCase ? value !== String(number) : value === String(number)));
+  const result = await poll(this, async () => ((await current.count()) ? clean(await current.textContent()) : null), (value) => (notCase ? value !== String(number) : value === String(number)));
   if (!result.ok) {
     throw friendly({
       message: notCase ? `Expected the pager not to be on page ${number}, but it is.` : `Expected the pager on page ${number}, but ${result.value === null ? 'the page has no pager' : 'it is on page ' + result.value}.`,
@@ -667,7 +759,7 @@ When(/^(I |we )*search the site for "([^"]*)"$/, async function (pronounCase, ke
  */
 Then(/^the search results should( not)* list "([^"]*)"$/, async function (notCase, title) {
   const titles = this.page.locator('ol.search-results > li .title a');
-  const result = await poll(this, async () => (await titles.allInnerTexts()).map(clean), (texts) => (notCase ? !texts.includes(clean(title)) : texts.includes(clean(title))));
+  const result = await poll(this, async () => (await titles.allTextContents()).map(clean), (texts) => (notCase ? !texts.includes(clean(title)) : texts.includes(clean(title))));
   if (!result.ok) {
     throw friendly({
       message: notCase ? `Expected the search results not to list "${title}", but they do.` : `Expected the search results to list "${title}", but they list: ${result.value.join(' | ') || '(no results)'}.`,
@@ -724,7 +816,7 @@ Then(/^(I |we )*should( not)* see the teaser "([^"]*)"$/, async function (pronou
   const teaser = this.page.locator('article.view-mode-teaser').filter({ has: this.page.locator('h2 a').filter({ hasText: exactly(title) }) });
   const result = await poll(this, () => teaser.count(), (count) => (notCase ? count === 0 : count > 0));
   if (!result.ok) {
-    const titles = await this.page.locator('article.view-mode-teaser h2 a').allInnerTexts().catch(() => []);
+    const titles = await this.page.locator('article.view-mode-teaser h2 a').allTextContents().catch(() => []);
     throw friendly({
       message: notCase ? `Expected no teaser "${title}", but the page shows it.` : `Expected the teaser "${title}", but the page shows the teasers: ${titles.map(clean).join(' | ') || '(none)'}.`,
       hint: 'A teaser is an `article.view-mode-teaser` with the title as a link; another page of the pager may hold it.',
@@ -791,7 +883,7 @@ Then(/^the content on the page should( not)* be (published|unpublished)$/, async
  */
 Then(/^the content on the page should( not)* be tagged "([^"]*)"$/, async function (notCase, term) {
   const tags = this.page.locator('article.node .field-type-taxonomy-term-reference a');
-  const result = await poll(this, async () => (await tags.allInnerTexts()).map(clean), (texts) => (notCase ? !texts.includes(clean(term)) : texts.includes(clean(term))));
+  const result = await poll(this, async () => (await tags.allTextContents()).map(clean), (texts) => (notCase ? !texts.includes(clean(term)) : texts.includes(clean(term))));
   if (!result.ok) {
     throw friendly({
       message: notCase ? `Expected the content not to be tagged "${term}", but it is.` : `Expected the content to be tagged "${term}", but its tags are: ${result.value.join(', ') || '(none)'}.`,
@@ -847,7 +939,7 @@ Then(/^(I |we )*should( not)* see the block titled "([^"]*)"$/, async function (
   const block = this.page.locator('.block').filter({ has: this.page.locator('.block-title').filter({ hasText: exactly(title) }) });
   const result = await poll(this, async () => (await block.count()) && (await block.first().isVisible()), (visible) => (notCase ? !visible : Boolean(visible)));
   if (!result.ok) {
-    const titles = await this.page.locator('.block .block-title').allInnerTexts().catch(() => []);
+    const titles = await this.page.locator('.block .block-title').allTextContents().catch(() => []);
     throw friendly({
       message: notCase ? `Expected no block titled "${title}", but the page shows it.` : `Expected a block titled "${title}", but the page shows the block titles: ${titles.map(clean).filter(Boolean).join(' | ') || '(none)'}.`,
       hint: 'Blocks are placed in the layout of the page (Structure > Layouts); a block can hide its title, and its visibility conditions decide who sees it.',
@@ -925,7 +1017,7 @@ const ERROR_PAGES = { 'access denied': { heading: 'Access denied', status: 403 }
  */
 Then(/^the page should( not)* be an? (access denied|page not found) page$/, async function (notCase, kind) {
   const { heading, status } = ERROR_PAGES[kind];
-  const found = clean(await this.page.locator('h1').first().innerText({ timeout: budget(this) }).catch(() => ''));
+  const found = clean(await this.page.locator('h1').first().textContent({ timeout: budget(this) }).catch(() => ''));
   const code = await statusOf(this, this.page.url());
   const is = found === heading && code === status;
   if (notCase ? is : !is) {

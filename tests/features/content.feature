@@ -103,7 +103,6 @@ Feature: Creating, editing, publishing and deleting content
   Scenario: The content form is refused without a title
     Given I am logged in as "editor"
     When I start a new "Page"
-    And browser validation for the form "form.node-form" is disabled
     And I press "Save"
     Then the error message should be "Title field is required."
     And the "Title" field should be marked as an error
