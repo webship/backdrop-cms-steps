@@ -382,6 +382,33 @@ When(/^(I |we )*set the content to be (published|a draft)$/, async function (pro
 });
 
 /**
+ * Promote the content of the form to the lists of promoted content (the home
+ * page of a standard site) or keep it out of them, and make it sticky at the
+ * top of lists or not: the "Promote" and "Make sticky at top of lists"
+ * checkboxes of the publishing options. The two checkboxes share one
+ * accessible name ("Additional actions"), so a step that ticks a checkbox by
+ * its label does not find them.
+ *
+ * Example #1: When I set the content to be promoted
+ * Example #2: When I set the content to be not promoted
+ * Example #3: And I set the content to be sticky
+ * Example #4: When we set the content to be not sticky
+ * Example #5: And set the content to be not promoted
+ *
+ */
+When(/^(I |we )*set the content to be (not )?(promoted|sticky)$/, async function (pronounCase, notCase, kind) {
+  const pane = await publishingOptions(this);
+  const box = pane.locator(`input[type="checkbox"][name="${kind === 'promoted' ? 'promote' : 'sticky'}"]`).first();
+  if (!(await box.count())) {
+    throw friendly({
+      message: `The publishing options of this form have no "${kind === 'promoted' ? 'Promote' : 'Make sticky at top of lists'}" checkbox.`,
+      hint: 'The content type decides whether its content can be promoted or made sticky (its publishing settings); a Page of the standard profile offers neither.',
+    });
+  }
+  await box.setChecked(!notCase);
+});
+
+/**
  * Schedule the content form for publication at a date ("2031-05-01") and a
  * time ("09:30"): the content is saved as a draft and published by cron once
  * the time has come.
@@ -992,7 +1019,7 @@ async function openMenu(world, menu) {
  * the title of the link and the path it leads to ("about", "node/5",
  * "<front>" or a full address).
  *
- * Example #1: When I add the link "Notes" to "posts" in the "Primary navigation" menu
+ * Example #1: When I add the link "Notes" to "about" in the "Primary navigation" menu
  * Example #2: When I add the link "Hours" to "opening-hours" in the "Primary navigation" menu
  * Example #3: When we add the link "Start" to "<front>" in the "Primary navigation" menu
  * Example #4: And I add the link "Project" to "https://example.com" in the "Primary navigation" menu

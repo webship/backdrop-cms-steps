@@ -11,7 +11,7 @@ content of your site.
 | `messages-and-validation` | Status, warning and error messages, dismissing them, fields marked as errors, values of fields. |
 | `navigation`, `search`, `front-end-content` | Primary navigation and its toggle, breadcrumb, heading, page tabs and the active tab, pager, the search block and results, teasers, tags, blocks, layout template and theme. |
 | `access` | Who may open which page; the "Access denied" and "Page not found" pages. |
-| `administration-bar`, `administration-pages` | The administration bar, its menus and menu search; administration pages by name. |
+| `administration-bar`, `administration-pages` | The administration bar, its menus and menu search, on a wide window and on windows where the bar folds its parts away; administration pages by name. |
 | `listings` | Filters, sorting, rows, operations and bulk actions of the listings. |
 | `content`, `editor`, `images-and-files`, `taxonomy`, `menus` | The life of posts and pages, the rich text editor, image fields and the file listing, terms and tags, menu links. |
 | `layouts` | The layout editor: blocks, regions, keyboard moves, visibility conditions, save and cancel. |

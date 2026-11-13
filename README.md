@@ -75,9 +75,9 @@ npm install --save-dev @webship-js/backdrop-cms-steps
 | Path | Purpose |
 | --- | --- |
 | `tests/step-definitions/backdrop.steps.js` | Session and front end: logging in and out, the session cookie, password reset, messages and their "Dismiss" link, form errors, the primary navigation and its toggle, the account menu of the header, breadcrumb, page heading, page tabs and the active tab, action links, pager, search, teasers, tags, images, blocks, the layout template and the theme of a page, "Access denied" and "Page not found", access to a path. |
-| `tests/step-definitions/backdrop-admin.steps.js` | Administration: the administration bar (menus, menu search, account, flush caches, log out), pages by name, listings (filters, sorting, rows, operations, bulk actions), the dialog, confirmation forms, accounts, roles and permissions, the status report, cron, the configuration manager. |
-| `tests/step-definitions/backdrop-content.steps.js` | Content: starting a piece of content, fields by their label, the rich text editor, publishing options and scheduling, vertical tabs and collapsible fieldsets, saving, finding content by its title, files in fields and in the file listing, terms, autocomplete fields, menu links. |
-| `tests/step-definitions/backdrop-layout.steps.js` | Layouts: the layout editor, regions and blocks (add, configure, move, disable, remove), the block list and its search, visibility conditions, save and cancel, the list of layouts. |
+| `tests/step-definitions/backdrop-admin.steps.js` | Administration: the administration bar (menus, menu search, account, flush caches, log out, also when the bar folds them away on a narrow window), pages by name, listings (filters, sorting, rows, operations, bulk actions), the dialog, confirmation forms, accounts, roles and permissions, the status report, cron, the configuration manager. |
+| `tests/step-definitions/backdrop-content.steps.js` | Content: starting a piece of content, fields by their label, the rich text editor, publishing options (published, draft, scheduled, promoted, sticky), vertical tabs and collapsible fieldsets, saving, finding content by its title, files in fields and in the file listing, terms, autocomplete fields, menu links. |
+| `tests/step-definitions/backdrop-layout.steps.js` | Layouts: the layout editor, regions and blocks (add, configure, move, disable, remove), the block list and its search, visibility conditions (in the dialog and under the block), save and cancel, the list of layouts. |
 | `tests/step-definitions/backdrop-helpers.js` | Shared plumbing. It registers no step. |
 | `tests/features/*.feature` | Reference features for a standard site with the seeded content. |
 | `tests/fixtures/pixel.png` | The image the upload scenarios use. |
@@ -200,6 +200,7 @@ block above its definition. Assertions read both ways (`should` and
 - `Then I should see the administration bar`
 - `Then the administration bar should list "Content"`
 - `When I open "Structure > Layouts" from the administration bar`
+- `Then the administration bar should fold its tasks`
 - `When I search the administration bar for "Layouts"`
 - `Then the administration bar search should suggest "Structure: Layouts"`
 - `When I choose "Structure: Layouts" from the administration bar search`
@@ -274,6 +275,7 @@ block above its definition. Assertions read both ways (`should` and
 **Publishing options**
 
 - `When I set the content to be published`
+- `When I set the content to be promoted`
 - `When I schedule the content for "2031-05-01" at "09:30"`
 - `When I give the content the menu link "Hive tour"`
 
@@ -307,7 +309,7 @@ block above its definition. Assertions read both ways (`should` and
 
 **Menu links**
 
-- `When I add the link "Notes" to "posts" in the "Primary navigation" menu`
+- `When I add the link "Notes" to "about" in the "Primary navigation" menu`
 - `When I delete the link "Notes" from the "Primary navigation" menu`
 - `Given the link "Notes" does not exist in the "Primary navigation" menu`
 - `When I disable the link "Notes" of the "Primary navigation" menu`
@@ -336,6 +338,7 @@ block above its definition. Assertions read both ways (`should` and
 - `When I move the "Syndicate" block of the "Sidebar" region up`
 - `Then the "Sidebar" region should have the "Syndicate" block`
 - `Then the "Sidebar" region should have 0 blocks`
+- `Then the "Syndicate" block of the "Sidebar" region should have a condition containing "Editor"`
 - `Then the "Header block" block should come before the "Primary navigation" block in the "Header" region`
 
 **Visibility conditions**
@@ -374,6 +377,12 @@ Two things to know when you mix them:
 - The forms carry no browser validation (no `required` attribute): an empty
   required field is refused by the site with an error message, so a scenario
   needs no step to switch browser validation off.
+- The administration bar measures the window. When its items do not fit, the
+  search, the account link and "Log out" fold behind "More tasks" (for an
+  administrator at 1400 pixels and below), and on a narrower window the menu
+  folds behind "Menu". The steps of the bar open the folded part themselves;
+  `Then the administration bar should fold its tasks` states which case a
+  scenario covers.
 - Pages for visitors are cached by the site and, for a few minutes, by the
   browser. After a change that should show at once to visitors (a saved
   layout), flush the caches and reload:
