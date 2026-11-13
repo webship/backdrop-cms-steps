@@ -15,6 +15,8 @@
  * - the pages "Visit the apiary" (linked from the primary navigation) and
  *   "Opening hours";
  * - the site name "Webship Test Site";
+ * - the flood limits of log in and password reset lifted, so the suite can run
+ *   any number of times on the site;
  * - the "Search form" block in the header of the default layout, and the
  *   permission to search for visitors and signed-in users.
  */
@@ -91,6 +93,13 @@ seed_node('page', 'Opening hours', '<p>Saturday and Sunday, from nine to five.</
 
 // The name of the site (a name with spaces does not survive the command line of the installer).
 config_set('system.core', 'site_name', 'Webship Test Site');
+
+// The suite logs in with a wrong password and asks for a password reset on
+// every run. The site counts both (five per account in six hours, fifty per
+// address in an hour) and refuses the next one, so a suite that runs more than
+// a few times on one site would fail on that count. A test site lifts it.
+config_set('user.flood', 'flood_user_limit', 100000);
+config_set('user.flood', 'flood_ip_limit', 100000);
 
 // Visitors and signed-in users may search.
 user_role_grant_permissions(BACKDROP_ANONYMOUS_ROLE, array('search content'));

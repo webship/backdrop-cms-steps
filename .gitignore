@@ -12,3 +12,6 @@ videos/
 
 # Local DDEV build of the site the suite runs against (CI builds the same in a temporary folder).
 site/
+
+# Notes of the exploration of the site in the browser (working notes, not shipped).
+exploration/
