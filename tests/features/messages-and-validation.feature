@@ -19,7 +19,6 @@ Feature: Messages and form errors
   Scenario: An error message names the field that was refused
     Given I am logged in as "editor"
     When I start a new "Post"
-    And browser validation for the form "form.node-form" is disabled
     And I press "Save"
     Then there should be an error message
     And the error message should be "Title field is required."
@@ -53,3 +52,14 @@ Feature: Messages and form errors
     And the "Tags" field should have the value "Bees"
     When I enter "Changed, but not saved" in the "Title" field
     Then the "Title" field should have the value "Changed, but not saved"
+
+  # A required field prints its star inside the label, so the label reads
+  # "Title *". The built-in step takes the label as it reads; the step of the
+  # pack takes it without the star.
+  Scenario: A required field is filled in by its label, with or without the star
+    Given I am logged in as "editor"
+    When I start a new "Post"
+    And I fill in "Title *" with "Typed with the built-in step"
+    Then the "Title" field should have the value "Typed with the built-in step"
+    When I enter "Typed with the step of the pack" in the "Title" field
+    Then the "Title" field should have the value "Typed with the step of the pack"

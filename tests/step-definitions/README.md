@@ -2,7 +2,7 @@
 
 | File | Covers |
 | --- | --- |
-| `backdrop.steps.js` | Session and front end: log in and out, messages, form errors, primary navigation, breadcrumb, heading, page tabs, pager, search, teasers, tags, blocks, layout template, theme, error pages, access to a path. |
+| `backdrop.steps.js` | Session and front end: log in and out, messages, form errors, primary navigation, account menu, breadcrumb, heading, page tabs, pager, search, teasers, tags, blocks, layout template, theme, error pages, access to a path. |
 | `backdrop-admin.steps.js` | Administration: the administration bar, pages by name, listings, the dialog, confirmation forms, accounts, roles, permissions, status report, cron, configuration manager. |
 | `backdrop-content.steps.js` | Content: content forms, fields by label, the rich text editor, publishing and scheduling, vertical tabs, fieldsets, files, terms, menu links. |
 | `backdrop-layout.steps.js` | Layouts: the layout editor, blocks, regions, visibility conditions, the list of layouts. |
@@ -19,7 +19,9 @@
   `npm run test:examples`: every example must match its own step and no step of
   webship-js.
 - Find things the way a person does (label, visible text, role), with the
-  classes and ids core prints as the fallback. Wait on what the step reads
+  classes and ids core prints as the fallback. Read a name from the page
+  source (`textContent`), not as it is drawn (`innerText`): the themes draw
+  tabs, table headers and region names in upper case. Wait on what the step reads
   (`poll`, `assertPresence`), never on a fixed time, and fail with
   `friendly({ message, hint })` so the failure says what was expected, what was
   found and where to look.

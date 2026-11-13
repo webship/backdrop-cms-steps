@@ -7,9 +7,9 @@ content of your site.
 
 | Feature | Covers |
 | --- | --- |
-| `session` | Logging in and out with the users registry, the session cookie, refused log ins, password reset. |
+| `session` | Logging in and out with the users registry, the session cookie, refused log ins, password reset, the account menu of the header. |
 | `messages-and-validation` | Status, warning and error messages, dismissing them, fields marked as errors, values of fields. |
-| `navigation`, `search`, `front-end-content` | Primary navigation and its toggle, breadcrumb, heading, page tabs, pager, the search block and results, teasers, tags, blocks, layout template and theme. |
+| `navigation`, `search`, `front-end-content` | Primary navigation and its toggle, breadcrumb, heading, page tabs and the active tab, pager, the search block and results, teasers, tags, blocks, layout template and theme. |
 | `access` | Who may open which page; the "Access denied" and "Page not found" pages. |
 | `administration-bar`, `administration-pages` | The administration bar, its menus and menu search; administration pages by name. |
 | `listings` | Filters, sorting, rows, operations and bulk actions of the listings. |

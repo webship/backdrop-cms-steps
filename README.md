@@ -74,7 +74,7 @@ npm install --save-dev @webship-js/backdrop-cms-steps
 
 | Path | Purpose |
 | --- | --- |
-| `tests/step-definitions/backdrop.steps.js` | Session and front end: logging in and out, the session cookie, password reset, messages and their "Dismiss" link, form errors, the primary navigation and its toggle, breadcrumb, page heading, page tabs, action links, pager, search, teasers, tags, images, blocks, the layout template and the theme of a page, "Access denied" and "Page not found", access to a path. |
+| `tests/step-definitions/backdrop.steps.js` | Session and front end: logging in and out, the session cookie, password reset, messages and their "Dismiss" link, form errors, the primary navigation and its toggle, the account menu of the header, breadcrumb, page heading, page tabs and the active tab, action links, pager, search, teasers, tags, images, blocks, the layout template and the theme of a page, "Access denied" and "Page not found", access to a path. |
 | `tests/step-definitions/backdrop-admin.steps.js` | Administration: the administration bar (menus, menu search, account, flush caches, log out), pages by name, listings (filters, sorting, rows, operations, bulk actions), the dialog, confirmation forms, accounts, roles and permissions, the status report, cron, the configuration manager. |
 | `tests/step-definitions/backdrop-content.steps.js` | Content: starting a piece of content, fields by their label, the rich text editor, publishing options and scheduling, vertical tabs and collapsible fieldsets, saving, finding content by its title, files in fields and in the file listing, terms, autocomplete fields, menu links. |
 | `tests/step-definitions/backdrop-layout.steps.js` | Layouts: the layout editor, regions and blocks (add, configure, move, disable, remove), the block list and its search, visibility conditions, save and cancel, the list of layouts. |
@@ -147,12 +147,18 @@ block above its definition. Assertions read both ways (`should` and
 - `When I toggle the primary navigation`
 - `Then the primary navigation should be open`
 
+**Account menu**
+
+- `Then the account menu should list "Log out"`
+- `When I click "My account" in the account menu`
+
 **Breadcrumb, heading, tabs, action links**
 
 - `Then the breadcrumb trail should be "Home"`
 - `Then the page heading should be "Field note 12"`
 - `Then I should see the "Edit" page tab`
 - `When I open the "Edit" page tab`
+- `Then the "View" page tab should be active`
 - `When I follow the "Add content" action link`
 
 **Pager**
@@ -186,7 +192,6 @@ block above its definition. Assertions read both ways (`should` and
 - `Then the page should be an access denied page`
 - `Then I should have access to "admin/content"`
 - `When I open my account page`
-
 
 ### `backdrop-admin.steps.js`
 
@@ -248,7 +253,6 @@ block above its definition. Assertions read both ways (`should` and
 - `Then the exported configuration should contain "site_name"`
 - `Then the configuration should not have staged changes`
 
-
 ### `backdrop-content.steps.js`
 - `When I start a new "Post"`
 - `When I save the content form`
@@ -309,7 +313,6 @@ block above its definition. Assertions read both ways (`should` and
 - `When I disable the link "Notes" of the "Primary navigation" menu`
 - `Then the "Primary navigation" menu should have the link "Home"`
 
-
 ### `backdrop-layout.steps.js`
 - `Given I am editing the "Default Layout" layout`
 - `Given the "Default Layout" layout has no unsaved changes`
@@ -346,7 +349,6 @@ block above its definition. Assertions read both ways (`should` and
 - `Then the "Dashboard" layout should have a condition containing "Access Dashboard"`
 - `Then the "Home page" layout should apply to the path "home"`
 
-
 ## Composing with webship-js
 
 The pack adds what the platform needs and leaves the rest to webship-js. A few
@@ -355,7 +357,6 @@ built-in steps the reference features use next to the pack's own:
 ```gherkin
 Given I am an anonymous user
 Given I am viewing the site on a "xs" device
-Given browser validation for the form "form.node-form" is disabled
 When I press "Save"
 When I check "Editor"
 Then I should see "Not published" in the "Unpublished field note" row
@@ -365,9 +366,14 @@ Then the page should have exactly one h1
 
 Two things to know when you mix them:
 
-- A required field prints a star inside its label ("Title \*"), so webship-js's
-  `I fill in "Title" with ...` (an exact label match) does not find it. Use
-  `I enter "..." in the "Title" field`, which reads the label as a person does.
+- A required field prints a star inside its label, so the label reads
+  "Title \*". webship-js looks a label up exactly: `I fill in "Title *" with ...`
+  finds the field and `I fill in "Title" with ...` does not. The pack adds
+  `I enter "..." in the "Title" field`, which takes the label without the star
+  and also reads "Body (Edit summary)" as "Body".
+- The forms carry no browser validation (no `required` attribute): an empty
+  required field is refused by the site with an error message, so a scenario
+  needs no step to switch browser validation off.
 - Pages for visitors are cached by the site and, for a few minutes, by the
   browser. After a change that should show at once to visitors (a saved
   layout), flush the caches and reload:

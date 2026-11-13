@@ -59,7 +59,7 @@ async function region(world, name) {
   const byName = editor.locator(`.layout-editor-region[data-region-name="${clean(name).toLowerCase().replace(/\s+/g, '_')}"]`);
   if (await byLabel.count()) return byLabel.first();
   if (await byName.count()) return byName.first();
-  const labels = await editor.locator('.layout-editor-region-title h2.label').allInnerTexts();
+  const labels = await editor.locator('.layout-editor-region-title h2.label').allTextContents();
   throw friendly({
     message: `The layout has no "${name}" region. Its regions are: ${labels.map(clean).join(', ')}.`,
     hint: 'The regions come from the layout template (the "Configure layout" tab); use the label the editor shows.',
@@ -74,7 +74,7 @@ async function region(world, name) {
  */
 async function blockTitles(area) {
   // A disabled block reads "<title> (Disabled)": the title is the name without the mark.
-  return (await area.locator('.layout-editor-block .layout-editor-block-title .text').allInnerTexts()).map((text) => clean(text).replace(/ \(Disabled\)$/, ''));
+  return (await area.locator('.layout-editor-block .layout-editor-block-title .text').allTextContents()).map((text) => clean(text).replace(/ \(Disabled\)$/, ''));
 }
 
 /**
@@ -109,7 +109,7 @@ async function block(world, title, regionName) {
 async function clickEditorButton(world, holder, name) {
   const link = holder.locator('.dropbutton a').filter({ hasText: exactly(name) }).first();
   if (!(await link.count())) {
-    const offered = await holder.locator('.dropbutton a').allInnerTexts();
+    const offered = await holder.locator('.dropbutton a').allTextContents();
     throw friendly({ message: `There is no "${name}" entry. The drop button offers: ${offered.map(clean).join(', ')}.`, hint: 'A disabled block offers "Enable" instead of "Disable".' });
   }
   if (!(await link.isVisible())) {
@@ -266,7 +266,7 @@ Then(/^the layout(?: editor)? should( not)* have unsaved changes$/, async functi
  */
 Then(/^the layout should( not)* have the "([^"]*)" region$/, async function (notCase, name) {
   const editor = await layoutEditor(this);
-  const labels = (await editor.locator('.layout-editor-region-title h2.label').allInnerTexts()).map(clean);
+  const labels = (await editor.locator('.layout-editor-region-title h2.label').allTextContents()).map(clean);
   const has = labels.some((label) => label.toLowerCase() === clean(name).toLowerCase());
   if (notCase ? has : !has) {
     throw friendly({ message: notCase ? `Expected the layout not to have the "${name}" region, but it has it.` : `Expected the layout to have the "${name}" region, but its regions are: ${labels.join(', ')}.`, hint: 'The regions come from the layout template (the "Configure layout" tab).' });
@@ -321,7 +321,7 @@ When(/^(I |we )*search the block list for "([^"]*)"$/, async function (pronounCa
  */
 Then(/^the block list should( not)* offer "([^"]*)"$/, async function (notCase, name) {
   const items = dialog(this).locator('.layout-block-add-row:visible a.block-item');
-  const result = await poll(this, async () => (await items.allInnerTexts()).map(clean), (names) => (notCase ? !names.includes(clean(name)) : names.includes(clean(name))));
+  const result = await poll(this, async () => (await items.allTextContents()).map(clean), (names) => (notCase ? !names.includes(clean(name)) : names.includes(clean(name))));
   if (!result.ok) {
     throw friendly({ message: notCase ? `Expected the block list not to offer "${name}", but it does.` : `Expected the block list to offer "${name}", but it offers: ${(result.value || []).slice(0, 40).join(' | ') || '(nothing; is the block list open?)'}.`, hint: 'Open the block list first; its search hides the blocks that do not match.' });
   }
@@ -341,7 +341,7 @@ Then(/^the block list should( not)* offer "([^"]*)"$/, async function (notCase, 
 When(/^(I |we )*choose "([^"]*)" from the block list$/, async function (pronounCase, name) {
   const item = dialog(this).locator('.layout-block-add-row a.block-item').filter({ hasText: exactly(name) }).first();
   if (!(await item.count())) {
-    const names = await dialog(this).locator('.layout-block-add-row a.block-item').allInnerTexts().catch(() => []);
+    const names = await dialog(this).locator('.layout-block-add-row a.block-item').allTextContents().catch(() => []);
     throw friendly({ message: `The block list has no "${name}" block. It lists: ${names.map(clean).slice(0, 40).join(' | ') || '(nothing; is the block list open?)'}.`, hint: 'Open the block list first ("When I open the block list of the "Sidebar" region"); use the name the list shows.' });
   }
   await item.click();
@@ -369,7 +369,7 @@ When(/^(I |we )*add the "([^"]*)" block to the "([^"]*)" region(?: with the titl
   const item = box.locator('.layout-block-add-row a.block-item').filter({ hasText: exactly(name) }).first();
   const listed = await poll(this, () => item.count(), (count) => count > 0);
   if (!listed.ok) {
-    const names = await box.locator('.layout-block-add-row a.block-item').allInnerTexts().catch(() => []);
+    const names = await box.locator('.layout-block-add-row a.block-item').allTextContents().catch(() => []);
     throw friendly({ message: `The block list has no "${name}" block. It lists: ${names.map(clean).slice(0, 40).join(' | ')}.`, hint: 'Use the name the "Add block" dialog shows.' });
   }
   await item.click();
@@ -615,11 +615,11 @@ When(/^(I |we )*start the visibility condition "([^"]*)" in the dialog$/, async 
   await add.click();
   const select = dialog(this).locator('form.layout-condition-add-form select[name="condition"], form#layout-condition-add-form select[name="condition"]').first();
   await actOrExplain('open', 'the "Add condition" form', () => select.waitFor({ state: 'visible', timeout: budget(this) }), 'The form replaces the block configuration in the dialog.');
-  const options = (await select.locator('option').allInnerTexts()).map(clean);
+  const options = (await select.locator('option').allTextContents()).map(clean);
   if (!options.includes(clean(kind))) {
     throw friendly({ message: `There is no visibility condition "${kind}". The conditions are: ${options.slice(1).join(', ')}.`, hint: 'Use the text of the condition as the select shows it.' });
   }
-  await select.selectOption({ label: (await select.locator('option').allInnerTexts())[options.indexOf(clean(kind))] });
+  await select.selectOption({ label: (await select.locator('option').allTextContents())[options.indexOf(clean(kind))] });
   await settle(this);
 });
 
@@ -636,7 +636,7 @@ When(/^(I |we )*start the visibility condition "([^"]*)" in the dialog$/, async 
  */
 Then(/^the dialog should( not)* list a visibility condition containing "([^"]*)"$/, async function (notCase, text) {
   const items = dialog(this).locator('.layout-access-list li');
-  const result = await poll(this, async () => (await items.allInnerTexts()).map(clean), (texts) => (notCase ? !texts.some((value) => value.includes(text)) : texts.some((value) => value.includes(text))));
+  const result = await poll(this, async () => (await items.allTextContents()).map(clean), (texts) => (notCase ? !texts.some((value) => value.includes(text)) : texts.some((value) => value.includes(text))));
   if (!result.ok) {
     throw friendly({ message: notCase ? `Expected no visibility condition containing "${text}", but the dialog lists: ${result.value.join(' | ')}.` : `Expected a visibility condition containing "${text}", but the dialog lists: ${(result.value || []).join(' | ') || '(none)'}.`, hint: 'The conditions of a block are listed under "Visibility conditions" of its configuration dialog.' });
   }

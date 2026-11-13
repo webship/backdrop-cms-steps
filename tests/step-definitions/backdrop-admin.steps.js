@@ -355,17 +355,17 @@ When(/^(I |we )*filter the listing by "([^"]*)" with "([^"]*)"$/, async function
   await actOrExplain('find', 'the filters of the listing', () => form.waitFor({ state: 'visible', timeout: budget(this) }), LISTING_HINT + ' Only the listings built with Views have filters.');
   const widget = form.locator('.views-exposed-widget').filter({ has: this.page.locator('label').filter({ hasText: labelPattern(label) }) }).first();
   if (!(await widget.count())) {
-    const labels = await form.locator('.views-exposed-widget label').allInnerTexts();
+    const labels = await form.locator('.views-exposed-widget label').allTextContents();
     throw friendly({ message: `The listing has no "${label}" filter. Its filters are: ${labels.map(clean).filter(Boolean).join(', ') || '(none)'}.`, hint: 'Use the label of the filter as the listing shows it.' });
   }
   const control = widget.locator('select, input[type="text"], input[type="search"], input[type="checkbox"]').first();
   const tag = await control.evaluate((el) => (el.tagName === 'SELECT' ? 'select' : el.type));
   if (tag === 'select') {
-    const options = (await control.locator('option').allInnerTexts()).map(clean);
+    const options = (await control.locator('option').allTextContents()).map(clean);
     if (!options.includes(clean(value))) {
       throw friendly({ message: `The "${label}" filter has no option "${value}". It offers: ${options.join(', ')}.`, hint: 'Use the text of an option as the filter shows it.' });
     }
-    await control.selectOption({ label: (await control.locator('option').allInnerTexts())[options.indexOf(clean(value))] });
+    await control.selectOption({ label: (await control.locator('option').allTextContents())[options.indexOf(clean(value))] });
   } else if (tag === 'checkbox') {
     await control.setChecked(/^(yes|on|true|1|checked)$/i.test(value));
   } else {
@@ -496,14 +496,14 @@ When(/^(I |we )*apply the "([^"]*)" action to the selected rows$/, async functio
   const form = this.page.locator('.views-bulk-form').first();
   await actOrExplain('find', 'the bulk actions of the listing', () => form.waitFor({ state: 'visible', timeout: budget(this) }), LISTING_HINT + ' Only the listings of content, files, comments and user accounts have bulk actions.');
   const select = form.locator('select[name="action"]').first();
-  const options = (await select.locator('option').allInnerTexts()).map(clean);
+  const options = (await select.locator('option').allTextContents()).map(clean);
   if (!options.includes(clean(action))) {
     throw friendly({ message: `The listing has no bulk action "${action}". It offers: ${options.slice(1).join(', ')}.`, hint: 'Use the text of the action as the select shows it.' });
   }
   if (!(await this.page.locator('table:not(.sticky-header) tbody input[type="checkbox"]:checked').count())) {
     throw friendly({ message: `No row is selected for the bulk action "${action}".`, hint: 'Select rows first ("When I select the row "..." of the listing").' });
   }
-  await select.selectOption({ label: (await select.locator('option').allInnerTexts())[options.indexOf(clean(action))] });
+  await select.selectOption({ label: (await select.locator('option').allTextContents())[options.indexOf(clean(action))] });
   await form.locator('input[type="submit"]').first().click();
   await settle(this);
 });
@@ -567,7 +567,7 @@ Then(/^(I |we )*should( not)* see the dialog "([^"]*)"$/, async function (pronou
   const box = this.page.locator('.ui-dialog').filter({ has: this.page.locator('.ui-dialog-title', { hasText: title }) });
   const result = await poll(this, async () => (await box.count()) > 0 && (await box.first().isVisible()), (visible) => (notCase ? !visible : visible));
   if (!result.ok) {
-    const titles = await this.page.locator('.ui-dialog:visible .ui-dialog-title').allInnerTexts().catch(() => []);
+    const titles = await this.page.locator('.ui-dialog:visible .ui-dialog-title').allTextContents().catch(() => []);
     throw friendly({
       message: notCase ? `Expected no dialog titled "${title}", but it is open.` : `Expected a dialog titled "${title}", but ${titles.length ? 'the open dialog is "' + titles.map(clean).join('" / "') + '"' : 'no dialog is open'}.`,
       hint: 'Dialogs (`.ui-dialog`) open from links such as "Add block" and "Configure" in the layout editor; they need JavaScript.',
@@ -629,7 +629,7 @@ When(/^(I |we )*close the (?:open )?dialog$/, async function (pronounCase) {
  */
 Then(/^(I |we )*should be asked to confirm "([^"]*)"$/, async function (pronounCase, question) {
   const form = this.page.locator('form.confirmation').first();
-  const result = await poll(this, async () => ((await form.count()) ? clean(await this.page.locator('h1').first().innerText()) : null), (heading) => heading !== null && heading.includes(clean(question)));
+  const result = await poll(this, async () => ((await form.count()) ? clean(await this.page.locator('h1').first().textContent()) : null), (heading) => heading !== null && heading.includes(clean(question)));
   if (!result.ok) {
     throw friendly({
       message: result.value === null ? `Expected a confirmation form asking "${question}", but the page (${this.page.url()}) has none.` : `Expected to be asked "${question}", but the page asks "${result.value}".`,
@@ -769,7 +769,7 @@ Then(/^the account "([^"]*)" should( not)* have the "([^"]*)" role$/, async func
 Then(/^the account "([^"]*)" should be (active|blocked)$/, async function (username, state) {
   if (!/\/admin\/people(\/list)?(\?|$)/.test(this.page.url())) await openAdminPage(this, 'user accounts');
   const row = await rowNamed(this, username, { what: 'account' });
-  const found = clean(await row.locator('td.views-field-status').first().innerText().catch(() => ''));
+  const found = clean(await row.locator('td.views-field-status').first().textContent().catch(() => ''));
   if (found.toLowerCase() !== state) {
     throw friendly({ message: `Expected the account "${username}" to be ${state}, but the listing shows "${found || '(no status)'}".`, hint: 'The status is the "Status" column of the listing of user accounts.' });
   }
@@ -932,7 +932,7 @@ When(/^(I |we )*export the configuration "([^"]*)" of the group "([^"]*)"$/, asy
   if (!/configuration\/single\/export/.test(this.page.url())) await openAdminPage(this, 'single configuration export');
   const form = this.page.locator('form#config-export-single-form, form.config-export-single-form').first();
   const groups = form.locator('select[name="config_group"]');
-  const groupOptions = (await groups.locator('option').allInnerTexts()).map(clean);
+  const groupOptions = (await groups.locator('option').allTextContents()).map(clean);
   if (!groupOptions.includes(clean(group))) {
     throw friendly({ message: `There is no configuration group "${group}". The groups are: ${groupOptions.slice(1).join(', ')}.`, hint: 'Use the text of the group as the select shows it.' });
   }

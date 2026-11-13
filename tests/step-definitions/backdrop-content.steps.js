@@ -78,7 +78,7 @@ When(/^(I |we )*start a new "([^"]*)"$/, async function (pronounCase, type) {
   if (!(await this.page.locator(FORM).count())) {
     const link = this.page.locator('ul.admin-list .label a, ul.admin-list a').filter({ hasText: exactly(type) }).first();
     if (!(await link.count())) {
-      const types = await this.page.locator('ul.admin-list .label a').allInnerTexts().catch(() => []);
+      const types = await this.page.locator('ul.admin-list .label a').allTextContents().catch(() => []);
       throw friendly({
         message: `The "Add content" page does not offer the type "${type}". It offers: ${types.map(clean).join(', ') || '(no types)'}.`,
         hint: 'Use the name of the content type; the types offered follow the "create" permissions of the account.',
@@ -187,7 +187,7 @@ When(/^(I |we )*enter "(.*)" in the "([^"]*)" field$/, async function (pronounCa
  */
 When(/^(I |we )*pick "([^"]*)" in the "([^"]*)" field$/, async function (pronounCase, option, label) {
   const control = await fieldControl(this, label, ':scope > select', 'a select list');
-  const texts = await control.locator('option').allInnerTexts();
+  const texts = await control.locator('option').allTextContents();
   const index = texts.map(clean).indexOf(clean(option));
   if (index === -1) {
     throw friendly({ message: `The "${label}" field has no option "${option}". It offers: ${texts.map(clean).filter(Boolean).slice(0, 40).join(', ')}.`, hint: 'Use the text of an option as the field shows it.' });
@@ -466,7 +466,7 @@ When(/^(I |we )*switch to the "([^"]*)" vertical tab$/, async function (pronounC
  *
  */
 Then(/^(I |we )*should( not)* see the "([^"]*)" vertical tab$/, async function (pronounCase, notCase, title) {
-  const read = async () => (await verticalTabs(this).locator('strong').allInnerTexts()).map(clean);
+  const read = async () => (await verticalTabs(this).locator('strong').allTextContents()).map(clean);
   const result = await poll(this, read, (titles) => (notCase ? !titles.includes(clean(title)) : titles.includes(clean(title))));
   if (!result.ok) {
     throw friendly({
@@ -489,7 +489,7 @@ Then(/^(I |we )*should( not)* see the "([^"]*)" vertical tab$/, async function (
  */
 Then(/^the "([^"]*)" vertical tab summary should( not)* contain "([^"]*)"$/, async function (title, notCase, text) {
   const tab = await verticalTab(this, title);
-  const result = await poll(this, async () => clean(await tab.locator('.summary').first().innerText()), (summary) => (notCase ? !summary.includes(clean(text)) : summary.includes(clean(text))));
+  const result = await poll(this, async () => clean(await tab.locator('.summary').first().textContent()), (summary) => (notCase ? !summary.includes(clean(text)) : summary.includes(clean(text))));
   if (!result.ok) {
     throw friendly({ message: notCase ? `Expected the summary of the "${title}" vertical tab not to contain "${text}", but it reads "${result.value}".` : `Expected the summary of the "${title}" vertical tab to contain "${text}", but it reads "${result.value}".`, hint: 'The summary updates when a field of the tab changes.' });
   }
@@ -658,7 +658,7 @@ Then(/^the content "([^"]*)" should( not)* exist$/, async function (title, notCa
 Then(/^the content "([^"]*)" should have the status "([^"]*)"$/, async function (title, status) {
   const row = await contentRow(this, title);
   const column = await this.page.locator('table:not(.sticky-header) > thead th').evaluateAll((ths) => ths.findIndex((th) => /^\s*Status\s*$/i.test(th.textContent || '')));
-  const found = column === -1 ? '' : clean(await row.locator('td').nth(column).innerText());
+  const found = column === -1 ? '' : clean(await row.locator('td').nth(column).textContent());
   if (found.toLowerCase() !== clean(status).toLowerCase()) {
     throw friendly({ message: `Expected the content "${title}" to have the status "${status}", but the content listing shows "${found || '(no Status column)'}".`, hint: 'The status is the "Status" column of Content > Manage content: Published, Not published or Not published (Scheduled).' });
   }
@@ -749,7 +749,7 @@ Then(/^the "([^"]*)" field should( not)* hold the file "([^"]*)"$/, async functi
   const item = await formItem(this, label);
   const stem = name.replace(/\.[^.]+$/, '');
   const pattern = new RegExp('^' + escapeRegExp(stem) + '(_\\d+)?' + escapeRegExp(name.slice(stem.length)) + '$', 'i');
-  const result = await poll(this, async () => (await item.locator('span.file a, .file a').allInnerTexts()).map(clean), (names) => (notCase ? !names.some((value) => pattern.test(value)) : names.some((value) => pattern.test(value))));
+  const result = await poll(this, async () => (await item.locator('span.file a, .file a').allTextContents()).map(clean), (names) => (notCase ? !names.some((value) => pattern.test(value)) : names.some((value) => pattern.test(value))));
   if (!result.ok) {
     throw friendly({ message: notCase ? `Expected the "${label}" field not to hold the file "${name}", but it does.` : `Expected the "${label}" field to hold the file "${name}", but it holds: ${result.value.join(', ') || '(no file)'}.`, hint: 'Upload first ("When I upload the file "..." to the "..." field").' });
   }
@@ -963,7 +963,7 @@ When(/^(I |we )*type "([^"]*)" into the "([^"]*)" field and pick the suggestion 
   const option = options.filter({ hasText: exactly(suggestion) }).first();
   const result = await poll(this, () => option.count(), (count) => count > 0);
   if (!result.ok) {
-    const offered = await options.allInnerTexts().catch(() => []);
+    const offered = await options.allTextContents().catch(() => []);
     throw friendly({ message: `The "${label}" field did not suggest "${suggestion}" for "${typed}". It suggested: ${offered.map(clean).join(', ') || '(nothing)'}.`, hint: 'Suggestions come from the existing terms (or accounts) that contain the typed text.' });
   }
   await option.click();

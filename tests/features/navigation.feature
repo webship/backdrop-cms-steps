@@ -56,6 +56,18 @@ Feature: Front-end landmarks
     When I open the "Edit" page tab
     Then the page heading should be "Edit Post Field note 12"
 
+  Scenario: The tab of the page in the browser is the active one
+    Given I am logged in as "admin"
+    And I am on "/visit-the-apiary"
+    Then the "View" page tab should be active
+    And the "Edit" page tab should not be active
+    When I open the "Edit" page tab
+    Then the "Edit" page tab should be active
+    And the "View" page tab should not be active
+    When I go to the "content" administration page
+    Then the "Manage content" page tab should be active
+    And the "Manage files" page tab should not be active
+
   Scenario: Action links lead to the forms of a listing
     Given I am logged in as "editor"
     And I am on the "content" administration page

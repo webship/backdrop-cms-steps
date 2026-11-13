@@ -427,7 +427,7 @@ function adminPath(name) {
  * @param {string} what - The page the step wanted, for the message.
  */
 async function requirePage(world, what) {
-  const heading = clean(await world.page.locator('h1').first().innerText({ timeout: budget(world) }).catch(() => ''));
+  const heading = clean(await world.page.locator('h1').first().textContent({ timeout: budget(world) }).catch(() => ''));
   if (/^Access denied$/i.test(heading)) {
     const signedIn = await isLoggedIn(world);
     throw friendly({
@@ -712,7 +712,7 @@ async function verticalTab(world, title) {
   const tab = verticalTabs(world).filter({ has: world.page.locator('strong').filter({ hasText: exactly(title) }) }).first();
   const result = await poll(world, () => tab.count(), (count) => count > 0);
   if (!result.ok) {
-    const titles = await verticalTabs(world).locator('strong').allInnerTexts().catch(() => []);
+    const titles = await verticalTabs(world).locator('strong').allTextContents().catch(() => []);
     throw friendly({
       message: `There is no "${title}" vertical tab on the page. The vertical tabs are: ${titles.map(clean).join(', ') || '(none)'}.`,
       hint: 'Vertical tabs are on the content, term and account forms; the tabs offered depend on the permissions of the account.',
