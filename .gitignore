@@ -1,4 +1,4 @@
-node_modules/
+node_modules
 tests/reports/*.json
 tests/reports/*.html
 tests/reports/*.pdf
