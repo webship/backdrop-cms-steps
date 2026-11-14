@@ -38,6 +38,8 @@ jobs:
           autostart: false
 
       - name: Build a standard site with DDEV
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: .github/scripts/build-ddev-backdrop-cms.sh
 
       - name: Check the site is the one cucumber.js runs against by default

@@ -14,6 +14,7 @@
 #   ADMIN_USER, ADMIN_PASSWORD     the administrator        (default admin / Admin123456789!)
 #   EDITOR_USER, EDITOR_PASSWORD   an account with the stock "Editor" role (default editor / Editor123456789!)
 #   MEMBER_USER, MEMBER_PASSWORD   an account with no role beyond "Authenticated" (default member / Member123456789!)
+#   GITHUB_TOKEN or GH_TOKEN       a token for the download of core, to lift the anonymous limit of the GitHub API
 # The accounts are configuration: they are created once here and named in
 # cucumber.js; the features never create or delete users.
 set -euo pipefail
@@ -37,7 +38,15 @@ ddev add-on get backdrop-ops/ddev-backdrop-bee
 ddev start
 
 # The current stable release of core, then the standard install profile.
-ddev bee download-core
+# The download asks the GitHub API, which allows sixty anonymous requests an
+# hour from one address. With a token (GITHUB_TOKEN or GH_TOKEN) the build does
+# not depend on what else used that address.
+DOWNLOAD_TOKEN="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
+if [ -n "$DOWNLOAD_TOKEN" ]; then
+  ddev bee download-core --github-token="$DOWNLOAD_TOKEN"
+else
+  ddev bee download-core
+fi
 ddev bee site-install --username="$ADMIN_USER" --password="$ADMIN_PASSWORD" --email="admin@example.com" \
   --db-name=db --db-user=db --db-pass=db --db-host=db --auto
 
