@@ -1,3 +1,5 @@
+<p align="center"><img src="https://raw.githubusercontent.com/webship/backdrop-cms-steps/2.0.x/assets/logo.png" alt="Backdrop CMS logo" width="96"></p>
+
 # backdrop-cms-steps
 
 Cucumber step definitions for testing Backdrop CMS sites with
@@ -424,3 +426,7 @@ Remove the site with `ddev delete -Oy` in `site/`.
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+## Logo
+
+The Backdrop CMS logo in this README is the logo in the Backdrop CMS repository (`core/themes/seven/logo.png`) and belongs to the Backdrop CMS project. The Backdrop CMS name and logo are trademarks of their owner; this pack is not affiliated with or endorsed by them.
