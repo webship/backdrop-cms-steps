@@ -104,6 +104,25 @@ For your own site, create the accounts with the tool you already use and give
 their passwords through environment variables (`SITE_ADMIN_PASSWORD`,
 `SITE_EDITOR_PASSWORD`, `SITE_MEMBER_PASSWORD`); never commit a real password.
 
+## Test users
+
+The accounts this repository's suite logs in as, exactly as `cucumber.js` lists
+them in `worldParameters.users` (the default values; each one can be replaced
+through `SITE_<HANDLE>_USER` and `SITE_<HANDLE>_PASSWORD`).
+[`.github/scripts/build-ddev-backdrop-cms.sh`](.github/scripts/build-ddev-backdrop-cms.sh)
+creates them on the local test site, and CI does the same on the runner: the
+installer creates `admin`, the build script `editor` (with the stock Editor role)
+and `member`. They are placeholder credentials of that throwaway site, not of
+any real one.
+
+```json
+{
+  "admin": { "username": "admin", "password": "Admin123456789!" },
+  "editor": { "username": "editor", "password": "Editor123456789!" },
+  "member": { "username": "member", "password": "Member123456789!" }
+}
+```
+
 ## Running the suite again and again
 
 The site counts failed log ins and password reset requests and refuses the next
