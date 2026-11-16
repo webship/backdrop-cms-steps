@@ -84,6 +84,7 @@ npm install --save-dev @webship-js/backdrop-cms-steps
 | `tests/features/*.feature` | Reference features for a standard site with the seeded content. |
 | `tests/fixtures/pixel.png` | The image the upload scenarios use. |
 | `tests/check-examples.js` | Checks every `Example #n:` line and every feature step against the step patterns (`npm run test:examples`). |
+| `tests/check-paths.js` | Checks that a feature or a scenario named on the command line runs alone (`npm run test:paths`). |
 | `.github/scripts/build-ddev-backdrop-cms.sh` | Builds the site with DDEV, the test accounts and the seeded content (`seed-site.php`). |
 
 ## Accounts
@@ -401,13 +402,17 @@ npx playwright install chromium
 SITE_DIR="$PWD/site" .github/scripts/build-ddev-backdrop-cms.sh
 
 npm run test:examples        # examples and feature steps against the patterns
+npm run test:paths           # a feature named on the command line runs alone
 npx cucumber-js --dry-run    # no undefined or ambiguous step
 npm test                     # the whole suite, against https://backdropcmssteps.ddev.site
 ```
 
 `LAUNCH_URL` points the suite at another site, `FEATURES` runs a subset
 (`FEATURES=tests/features/layouts.feature npm test`) and `CUCUMBER_TAGS` a lane
-(`CUCUMBER_TAGS=@critical npm test`). The suite leaves the site as it found it:
+(`CUCUMBER_TAGS=@critical npm test`). A feature named on the command line runs
+alone (`npx cucumber-js tests/features/layouts.feature`), and so does one
+scenario (`npx cucumber-js tests/features/layouts.feature:<line>`, the line of
+its `Scenario:`). The suite leaves the site as it found it:
 content, terms, links, files and layout changes a scenario makes, it removes.
 Remove the site with `ddev delete -Oy` in `site/`.
 
