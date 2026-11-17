@@ -25,6 +25,108 @@ CI builds a real Backdrop CMS site with [DDEV](https://ddev.com) and runs the
 whole suite against it, twice, on every push and pull request; see
 [`.github/workflows/test.yml`](.github/workflows/test.yml).
 
+## From nothing to a green run
+
+What the machine needs: Docker, [DDEV](https://ddev.com), git, python3, and
+Node.js 20 or later with npm. PHP and the database run in DDEV's containers;
+the Bee command line comes as a DDEV add-on.
+
+**1. The Backdrop CMS site.** The pack's own build script (the one CI runs)
+installs the current Backdrop CMS with the standard profile in a DDEV project,
+creates the accounts of [Test users](#test-users) and the content the features
+name, and runs cron for the search index; it takes about a minute.
+
+```bash
+git clone https://github.com/webship/backdrop-cms-steps.git
+SITE_DIR="$PWD/backdrop-site" backdrop-cms-steps/.github/scripts/build-ddev-backdrop-cms.sh
+```
+
+The site answers at `https://backdropcmssteps.ddev.site` (`PROJECT_NAME=<name>`
+gives another project and `https://<name>.ddev.site`). The download of core
+asks the GitHub API; with `GITHUB_TOKEN` (or `GH_TOKEN`) set, the build does not
+depend on the anonymous limit of sixty requests an hour.
+
+**2. A test project.**
+
+```bash
+mkdir backdrop-tests && cd backdrop-tests
+npm init -y
+npm install --save-dev webship-js @webship-js/backdrop-cms-steps
+npx init-webship-js
+```
+
+`npx init-webship-js` writes `cucumber.js`, `playwright.config.ts`, the
+`tests/` folders with a first feature and the `npm test` scripts, and installs
+Chromium. npm usually runs it already when it installs webship-js; a second
+run changes nothing.
+
+**3. `cucumber.js`.** Replace the file with the wiring of the pack: the step
+files of webship-js and of the pack, the address of the site, and the accounts
+(the JSON of [Test users](#test-users)).
+
+```javascript
+module.exports = {
+  default: {
+    requireModule: ['tsx/cjs'],
+    require: [
+      'node_modules/webship-js/tests/step-definitions/**/*.js',
+      'node_modules/@webship-js/backdrop-cms-steps/tests/step-definitions/*.js',
+      'tests/step-definitions/**/*.js',
+    ],
+    paths: ['tests/features/**/*.feature'],
+    format: ['@cucumber/pretty-formatter', 'json:tests/reports/cucumber_report.json'],
+    worldParameters: {
+      launchUrl: process.env.LAUNCH_URL || 'https://backdropcmssteps.ddev.site',
+      // The waits webship-js adds around each page, scenario and step (milliseconds).
+      minWaitTime: { page: 3000, before_scenario: 0, after_scenario: 0, before_step: 0, after_step: 0 },
+      users: {
+        admin: { username: 'admin', password: 'Admin123456789!' },
+        editor: { username: 'editor', password: 'Editor123456789!' },
+        member: { username: 'member', password: 'Member123456789!' },
+      },
+    },
+  },
+};
+```
+
+**4. A first feature**, `tests/features/first-run.feature`:
+
+```gherkin
+Feature: First run
+  Scenario: The editor logs in and gets the administration bar
+    Given I am logged in as "editor"
+    Then I should see the administration bar
+
+  Scenario: A visitor opens a page from the primary navigation
+    Given I am an anonymous user
+    When I click "Visit the apiary" in the primary navigation
+    Then the page heading should be "Visit the apiary"
+```
+
+**5. Run it.**
+
+```bash
+npm test
+```
+
+A green first run prints every step, then the summary (the starter feature of
+`npx init-webship-js` and the two scenarios above, passed) and the HTML report
+it wrote:
+
+```
+3 scenarios (3 passed)
+7 steps (7 passed)
+0m06.000s (executing steps: 0m05.900s)
+[webship-js] HTML report → …/tests/reports/cucumber_report.html
+```
+
+From there, copy the features of [`tests/features/`](tests/features/) (they
+also ship in the package, under
+`node_modules/@webship-js/backdrop-cms-steps/tests/features/`): together they
+use every step of the pack. The suite runs twice in a row in CI on every change
+and leaves the site as it found it; what it does not test is listed under
+[What is not covered](#what-is-not-covered).
+
 ## Requirements
 
 - Node.js 20 or later
