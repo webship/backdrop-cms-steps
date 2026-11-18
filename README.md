@@ -62,7 +62,9 @@ That site answers at `https://mysite.ddev.site`. Its accounts are the plugin's
 `dD.123123ddd`; step 3 names them), and it has none of the content the pack's
 script seeds: the first feature below needs none, the features of
 [`tests/features/`](tests/features/) do. The script's seed file adds it, run
-from the site's folder (`test/mysite`):
+from the site's folder (`test/mysite`); the features then pass there too, but
+for two lines that name the script's accounts (the account "admin" on the
+administration bar, three rows in the account listing):
 
 ```bash
 curl -sO https://raw.githubusercontent.com/webship/backdrop-cms-steps/2.0.x/.github/scripts/seed-site.php
