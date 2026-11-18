@@ -46,6 +46,29 @@ gives another project and `https://<name>.ddev.site`). The download of core
 asks the GitHub API; with `GITHUB_TOKEN` (or `GH_TOKEN`) set, the build does not
 depend on the anonymous limit of sixty requests an hour.
 
+In the [Webship Workspace](https://github.com/webship/workspace), its Backdrop
+CMS plugin builds the site instead, in a sites folder of the workspace (`test/`
+here; `dev/`, `sandboxes/` and `demos/` work the same):
+
+```bash
+bash core/scripts/plugins.sh --require backdrop-cms --with-needs
+bash core/scripts/plugins.sh --activate backdrop-cms --with-needs
+bash core/scripts/plugins.sh --install backdrop-cms
+bash test/cmd-backdrop-cms-project.sh mysite --install --add-users
+```
+
+That site answers at `https://mysite.ddev.site`. Its accounts are the plugin's
+(`administrator`, `editor` and `member`, each with the password
+`dD.123123ddd`; step 3 names them), and it has none of the content the pack's
+script seeds: the first feature below needs none, the features of
+[`tests/features/`](tests/features/) do. The script's seed file adds it, run
+from the site's folder (`test/mysite`):
+
+```bash
+curl -sO https://raw.githubusercontent.com/webship/backdrop-cms-steps/2.0.x/.github/scripts/seed-site.php
+ddev bee php-script seed-site.php && rm seed-site.php && ddev bee cron
+```
+
 **2. A test project.**
 
 ```bash
@@ -79,6 +102,8 @@ module.exports = {
       launchUrl: process.env.LAUNCH_URL || 'https://backdropcmssteps.ddev.site',
       // The waits webship-js adds around each page, scenario and step (milliseconds).
       minWaitTime: { page: 3000, before_scenario: 0, after_scenario: 0, before_step: 0, after_step: 0 },
+      // Chromium's note about the unload handler of Backdrop's own scripts is not an error of the site.
+      javascript: { ignore: 'Permissions policy violation: unload is not allowed' },
       users: {
         admin: { username: 'admin', password: 'Admin123456789!' },
         editor: { username: 'editor', password: 'Editor123456789!' },
@@ -88,6 +113,10 @@ module.exports = {
   },
 };
 ```
+
+On a site from the Webship Workspace (step 1), the accounts are the plugin's:
+`admin: { username: 'administrator', password: 'dD.123123ddd' }`, and `editor`
+and `member` with the same password. Its address goes in `LAUNCH_URL` (step 5).
 
 **4. A first feature**, `tests/features/first-run.feature`:
 
@@ -99,8 +128,8 @@ Feature: First run
 
   Scenario: A visitor opens a page from the primary navigation
     Given I am an anonymous user
-    When I click "Visit the apiary" in the primary navigation
-    Then the page heading should be "Visit the apiary"
+    When I click "About" in the primary navigation
+    Then the page heading should be "About"
 ```
 
 **5. Run it.**
@@ -109,6 +138,7 @@ Feature: First run
 npm test
 ```
 
+(`LAUNCH_URL=https://mysite.ddev.site npm test` for a site at another address.)
 A green first run prints every step, then the summary (the starter feature of
 `npx init-webship-js` and the two scenarios above, passed) and the HTML report
 it wrote:
