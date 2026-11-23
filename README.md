@@ -28,7 +28,7 @@ whole suite against it, twice, on every push and pull request; see
 ## From nothing to a green run
 
 What the machine needs: Docker, [DDEV](https://ddev.com), git, python3, and
-Node.js 20 or later with npm. PHP and the database run in DDEV's containers;
+Node.js 24 or later with npm. PHP and the database run in DDEV's containers;
 the Bee command line comes as a DDEV add-on.
 
 **1. The Backdrop CMS site.** The pack's own build script (the one CI runs)
@@ -161,7 +161,7 @@ and leaves the site as it found it; what it does not test is listed under
 
 ## Requirements
 
-- Node.js 20 or later
+- Node.js 24 or later
 - A webship-js 2.0 test project (webship-js 2.0.10 or later)
 - A Backdrop CMS 1.x site to test
 
